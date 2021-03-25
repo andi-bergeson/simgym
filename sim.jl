@@ -252,6 +252,61 @@ function updatepos!(c::Cell, dt, deccel, terminal_v)
 	end
 end
 
+# ╔═╡ 063bcc80-8d29-11eb-2f53-6f34ee1a45ef
+function lennard_jones!(cellarray, dt, r, dispersion_E, terminal_v)
+	"""
+	Models interactions on scales in which electrically neutral soft-matter is not hindered by the medium in its soft attraction and strong repulsion against itself
+	"""
+	A = 4 * dispersion_E * r^12
+	B = 4 * dispersion_E * r^6
+	
+	Vx = zeros(length(cellarray),length(cellarray))
+	Vy = zeros(length(cellarray),length(cellarray))
+	
+	for j in 1:length(cellarray)
+		for k in 1:length(cellarray)
+			dx = cellarray[j].p[1] - cellarray[k].p[1]
+			dy = cellarray[j].p[2] - cellarray[k].p[2]
+			
+			if j==k
+				nothing
+				
+			elseif dx < 0
+				Vx[j,k] = -(A / (dx^12)) - (B / (dx^6))
+			elseif dx > 0
+				Vx[j,k] = (A / (dx^12)) - (B / (dx^6))
+				
+			elseif dy < 0
+				Vy[j,k] = -(A / (dy^12)) - (B / (dy^6))
+			elseif dy > 0
+				Vy[j,k] = (A / (dy^12)) - (B / (dy^6))
+			else
+				nothing
+			end
+		end
+	end
+	
+	mass = 0.0000001
+	for i in 1:length(cellarray)
+		tot_vx = sum(Vx[i,:]) * mass
+		tot_vy = sum(Vy[i,:]) * mass
+		cellarray[i].v[1] += tot_vx*dt
+		cellarray[i].v[2] += tot_vy*dt
+		if cellarray[i].v[1] > terminal_v
+			cellarray[i].v[1] = terminal_v
+		elseif cellarray[i].v[1] < (-1*terminal_v)
+			cellarray[i].v[1] = (-1*terminal_v)
+		elseif cellarray[i].v[2] > terminal_v
+			cellarray[i].v[2] = terminal_v
+		elseif cellarray[i].v[2] < (-1*terminal_v)
+			cellarray[i].v[2] = (-1*terminal_v)
+		else
+			nothing
+		end
+	end
+		
+end
+
 # ╔═╡ c83729e4-7bde-11eb-3b68-43f4860a75b3
 function growndivide!(c::Cell, dt, lmax, mu)
 	
@@ -286,7 +341,7 @@ end
 md"""Because masses are assumed to be equal and we are ignoring cases where cells stick together (aka inelastic collision), we can use basic position updating and velocity swapping.
 """
 
-# ╔═╡ f5ffedaa-7a00-11eb-1565-c51d05ef2afe
+# ╔═╡ 5be70cd4-8d3e-11eb-2434-25892caaa68e
 function elastic!(c1::Cell, c2::Cell, r, dt, deccel, terminal_v)
 	
 	"""
@@ -309,15 +364,12 @@ function elastic!(c1::Cell, c2::Cell, r, dt, deccel, terminal_v)
 	end
 	
 	if abs(c1.p[1] - c2.p[1]) <= r && abs(c1.p[2] - c2.p[2]) <= r && abs(c1.v[1]) <= terminal_v && abs(c1.v[2]) <= terminal_v
-		
 		overlap = c1.p .- c2.p
-		
 		if overlap[1] < 0
 			c1.v[1] -= (terminal_v*.5)
 		else
 			c1.v[1] += (terminal_v*.5)
 		end
-			
 		if overlap[2] < 0
 			c1.v[2] -= (terminal_v*.5)
 		else
@@ -326,15 +378,12 @@ function elastic!(c1::Cell, c2::Cell, r, dt, deccel, terminal_v)
 	end
 	
 	if abs(c1.p[1] - c2.p[1]) <= r && abs(c1.p[2] - c2.p[2]) <= r && abs(c2.v[1]) <= terminal_v && abs(c2.v[2]) <= terminal_v
-		
 		overlap = c2.p .- c1.p
-		
 		if overlap[1] < 0
 			c2.v[1] -= (terminal_v)
 		else
 			c2.v[1] += (terminal_v)
 		end
-			
 		if overlap[2] < 0
 			c2.v[2] -= (terminal_v)
 		else
@@ -359,10 +408,54 @@ function initialize(n, sparsity_level, temp)
 	return pos, vel
 end
 
+# ╔═╡ bec0320e-8d2d-11eb-39f2-2f0b52cd3d8a
+function pixelate(cellarray, r, dim, locmin, locmax, cush)
+	
+	# either add percent occupation, make new function for it
+	
+	im = zeros(dim,dim)
+	
+	# create new bounds for scaling purposes
+	globmin = (1+cush)*locmin
+	globmax = (1+cush)*locmax
+	
+	# normalize and scale cell origins to pixel locations
+	o = []
+	for l in 1:length(cellarray)
+		origin = [((cellarray[l].p .- globmin) ./ (globmax - globmin)) .* dim]
+		append!(o,origin)
+	end
+	
+	# normalize radius to image
+	r_im = (r * dim) / (globmax - globmin)
+	# check in terminal that the radius is reasonable
+	#println(r_im)
+	
+	# for each cell origin, scan from leftmost pixel to origin
+	# compute the angle to the pixel and the length of the hypotenuse
+	# if that length is within radial distance, set pixel = cell index
+	
+	for x in 1:length(im[1,:])
+		for y in 1:length(im[:,1])
+			for i in 1:length(o)
+				h = o[i][1]
+				k = o[i][2]
+				if ((x-h)^2 + (y-k)^2) <= (r_im^2)
+					im[y,x] = 1
+				else
+					nothing
+				end
+			end
+		end
+	end
+	
+	return im
+end
+
 # ╔═╡ b7ee677c-7d97-11eb-3f35-135e8ff32d35
 begin
 	n_cells = 20
-	dense = .8
+	dense = .6
 	# i'll be changing this arbitrary stuff later but it's good enough for now
 	nonsense = 150
 	morenonsense = (n_cells / dense)
@@ -379,30 +472,33 @@ end
 
 # ╔═╡ 9f6a9850-7d93-11eb-1a82-49ec5e717ff9
 function plot_em()
-	myboy = scatter([cellarray[1].p[1]],[cellarray[1].p[2]], xlims=(-5,5), ylims=(-5,5), legend=false, markersize=5)
+	myboy = scatter([cellarray[1].p[1]],[cellarray[1].p[2]], xlims=(-5,5), ylims=(-5,5), legend=false, xticks=false, yticks=false, markersize=5)
 	for i in 2:length(cellarray)
 		scatter!([cellarray[i].p[1]],[cellarray[i].p[2]],markersize=5)
 	end
 	return myboy
 end
 
-# ╔═╡ a33a838a-7811-11eb-334d-8d069faac8cb
-@bind t html"<input type=range min=1 max=80>"
-
 # ╔═╡ 33cd3d70-7828-11eb-3814-0d24b6f35c08
 begin
+	#ims = []
+	t=41
 	anim = @animate for i=0:t
 		
 		# timestep
-		dt = 0.2
+		dt = 0.1
 		# min distance before collision
 		r = .2
 		# decceleration constant
-		drag = 0.03
+		drag = 0.1
 		# terminal velocity
-		vT = 0.05
+		vT = 0.1
+		# dispersion energy
+		ep = -.0001
 		
-		updatepos!.(cellarray, dt, drag, vT)
+		updatepos!.(cellarray, dt, drag, vT) 
+		
+		#lennard_jones!(cellarray, dt, r, ep, vT)
 		
 		#collision stuff
 		for j in 1:length(cellarray)-1
@@ -412,8 +508,12 @@ begin
 				k += 1
 			end
 		end
+		
+		#im = pixelate(cellarray, r, 255, minpos, maxpos, .7)
+		#heatmap(im, color=:grays, aspect_ratio=1)
+		
+		#append!(ims, im)
 					
-		#plot it!
 		plot_em()
 				
 	end
@@ -422,57 +522,48 @@ begin
 				
 end
 
-# ╔═╡ 09980640-7819-11eb-2520-15099bf4c1b1
-t
-
-# ╔═╡ 0bc8c7fe-7819-11eb-31ac-43184a232bcb
-function pixelate(cellarray, r, dim, locmin, locmax, cush, percocc)
+# ╔═╡ a6f01d32-8d3f-11eb-275b-657d79250e38
+function giftime(cellarray, t)
 	
-	# need to add pixpercell???
+	# timestep
+	dt = 0.1
+	# min distance before collision
+	r = .2
+	# decceleration constant
+	drag = 0.1
+	# terminal velocity
+	vT = 0.1
+	# dispersion energy
+	ep = -.0001
 	
-	emptyim = zeros(dim,dim)
-	
-	# create new bounds for scaling purposes
-	globmin = (1+cush)*locmin
-	globmax = (1+cush)*locmax
-	
-	# normalize and scale cell origins to pixel locations
-	o = []
-	for l in 1:length(cellarray)
-		origin = [((cellarray[l].p .- globmin) ./ (globmax - globmin)) .* dim]
-		append!(o,origin)
-	end
-	
-	# normalize radius to image
-	r_im = (r * dim) / (globmax - globmin)
-	
-	# for each cell origin, scan from leftmost pixel to origin
-	# compute the angle to the pixel and the length of the hypotenuse
-	# if that length is within radial distance, set pixel = cell index
-	
-	for i in 1 : length(o)
-		for j in Int64(floor(o[i][1]-r_im)) : Int64(floor(o[i][1]+r_im))
-			for k in Int64(floor(o[i][2]-r_im)) : Int64(floor(o[i][2]+r_im))
-				theta = atand(k-(1-percocc),j-(1-percocc))
-				if (r_im*sind(theta)) <= (k-(1-percocc))
-					emptyim[k , j] = 1
-				else
-					nothing
-				end
+	anim = @animate for i=1:t
+		updatepos!.(cellarray, dt, drag, vT) 
+		
+		#collision stuff
+		for j in 1:length(cellarray)-1
+			k = 1+j
+			while k <= length(cellarray)
+				elastic!(cellarray[j],cellarray[k],r,dt,drag,vT)
+				k += 1
 			end
 		end
+		l = @layout [ a  b ]
+		ax1 = plot_em()
+		im = pixelate(cellarray, r, 255, minpos, maxpos, .8)
+		ax2 = heatmap(im, color=:grays, aspect_ratio=1, legend=false, xticks=false, yticks=false)#, xflip = true, yflip=true)
+		figure = plot(ax1,ax2,layout=l)
 	end
-	return emptyim
+	gif(anim,"example.gif")
 end
+
+# ╔═╡ ac69d51c-8d41-11eb-3fd2-d37e8c885c60
+giftime(cellarray,60)
 
 # ╔═╡ 5c84d70c-7a15-11eb-0c37-7dfc0b335c76
 begin
-	im = pixelate(cellarray, .1, 255, minpos, maxpos, .4, .9)
-	heatmap(im, color=:grays, aspect_ratio=1)
+	bah = pixelate(cellarray, .2, 255, minpos, maxpos, .4)
+	heatmap(bah, color=:grays, aspect_ratio=1)
 end
-
-# ╔═╡ df861af0-8b70-11eb-0625-8f12b6efbf99
-# why are these square??????
 
 # ╔═╡ ef9f9636-8b71-11eb-0ad3-b3909cbe7a79
 
@@ -528,18 +619,18 @@ end
 # ╠═ebe9176e-5f76-11eb-1c02-e122c6af0b66
 # ╟─af75dbdc-7867-11eb-31a2-7b9dd3679b8b
 # ╠═cfd5dee2-6000-11eb-1305-5985de7b450f
+# ╠═063bcc80-8d29-11eb-2f53-6f34ee1a45ef
 # ╠═c83729e4-7bde-11eb-3b68-43f4860a75b3
 # ╟─b7fd1100-786a-11eb-1479-9f90a62171a8
-# ╠═f5ffedaa-7a00-11eb-1565-c51d05ef2afe
+# ╠═5be70cd4-8d3e-11eb-2434-25892caaa68e
 # ╠═9a285f94-7d84-11eb-27a8-a1474b2afcdb
 # ╠═9f6a9850-7d93-11eb-1a82-49ec5e717ff9
+# ╠═bec0320e-8d2d-11eb-39f2-2f0b52cd3d8a
 # ╠═b7ee677c-7d97-11eb-3f35-135e8ff32d35
 # ╠═33cd3d70-7828-11eb-3814-0d24b6f35c08
-# ╠═a33a838a-7811-11eb-334d-8d069faac8cb
-# ╠═09980640-7819-11eb-2520-15099bf4c1b1
-# ╠═0bc8c7fe-7819-11eb-31ac-43184a232bcb
+# ╠═a6f01d32-8d3f-11eb-275b-657d79250e38
+# ╠═ac69d51c-8d41-11eb-3fd2-d37e8c885c60
 # ╠═5c84d70c-7a15-11eb-0c37-7dfc0b335c76
-# ╠═df861af0-8b70-11eb-0625-8f12b6efbf99
 # ╠═ef9f9636-8b71-11eb-0ad3-b3909cbe7a79
 # ╠═ef875bca-8b71-11eb-2c9c-b1f4f7af2402
 # ╠═ef703f1e-8b71-11eb-04ab-753cfa0484de
