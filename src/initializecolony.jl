@@ -1,10 +1,16 @@
-function initialize(n, sparsity_level, temp)
+function initi(n, sparsity_level, temp)
 	"""
 	Creates arrays for the starting positions and velocities of cells.
 	"""
-	pos = sample(Float64[x for x in collect(-50:50)], (2,n), replace=false)
-	vel = sample(Float64[x for x in collect(-50:50)], (2,n), replace=false)
-	pos ./= sparsity_level
+	pos = rand(Float64, (2,n))
+	vel = rand(Float64, (2,n))
+	pos .*= sparsity_level
 	vel ./= temp
-	return pos, vel
+
+	cellarray = Cell[]
+	for i in 1:n
+		boop = [Cell(pos[:,i],vel[:,i])]
+		append!(cellarray,boop)
+	end
+	return cellarray
 end

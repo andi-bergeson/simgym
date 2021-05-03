@@ -9,13 +9,13 @@ struct Cell{T<:Real}
     a::Vector{T} # acceleration
 end
 
-Cell(p::Vector{T}, v::Vector{T}) where T<:Real = Cell(p,v,zeros(T,3),zeros(T,3))
+Cell(p::Vector{T}, v::Vector{T}) where T<:Real = Cell(p,v,zeros(T,2),zeros(T,2))
 
 struct Simulation
     cells::Vector{Cell} # Vector that holds all the cells in the simulations
     potentials # potential functions
 end
-
+#yes
 """Leapfrog integration step"""
 function leapfrog!(s::Simulation, dt)
     for c in s.cells
@@ -25,21 +25,22 @@ function leapfrog!(s::Simulation, dt)
     return
 end
 
-function calc_acceleration!(s::Simulation,ϵ)
+function calc_acceleration!(s::Simulation,ϵ::Float64)
     for i in eachindex(s.cells)
-        for j in eachindex(s.potentials)
-            a = sum(s.potentials[j].(Ref(s.cells[i]),s.cells,ϵ))
-            s.cells[i].a .= a
-        end
+        #for j in eachindex(s.potentials)
+        a = sum(s.potentials.(Ref(s.cells[i]),s.cells,ϵ))
+        s.cells[i].a .= a
+        #end
     end
 end
 
 function stepv!(s::Simulation, dt)
     for c in s.cells
 	    @. c.v = c.v2 + 0.5*dt*c.a
+    end
 end
 
-function integrate!(s::Simulation, dt, nsteps)
+function integrate!(s::Simulation, dt, nsteps, ϵ::Float64)
     for i in 1:nsteps
         leapfrog!(s, dt)
         calc_acceleration!(s,ϵ)

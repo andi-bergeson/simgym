@@ -1,9 +1,9 @@
-function len_jones(c1,c2,ϵ)
+function len_jones(c1::Cell,c2::Cell,ϵ::Float64)
     """
 	Models interactions on scales in which electrically neutral soft-matter
     is not hindered by the medium in its soft attraction and strong repulsion against itself
 	"""
-    if c1==c2; return c1.a; end
+    if c1==c2; return zeros(2); end
 
     σ = 1.
     A = 4*ϵ*(σ^12)
