@@ -1,16 +1,14 @@
 module simgym
 
-using LinearAlgebra
+using LinearAlgebra, Distributions
 
 export Cell, Simulation
-export integrate!, len_jones, initi
+export integrate!, len_jones, makeCellArray, pixelate
 
-include("main.jl")
-include("initializecolony.jl")
+include("Cell.jl")
+include("Simulation.jl")
 include("potentials.jl")
 include("pixelate.jl")
-include("dividengrow.jl")
-include("plotting.jl")
-
+include("cellDivide.jl")
 
 end # module
