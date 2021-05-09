@@ -16,7 +16,7 @@ function pixelate(s::Simulation, dim, sparsity_level, cushion)
 	# normalize radius to image
 	r_im = (1/2.7) * (dim / (localmax-localmin))
 	# check in terminal that the radius is reasonable
-	println(r_im)
+	#println(r_im)
 
 	for x in 1:length(im[1,:])
 		for y in 1:length(im[:,1])
