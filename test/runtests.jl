@@ -6,7 +6,7 @@ import simgym: leapfrog!
 testpos = [0.,0.]
 testvel = [.0001,.0001]
 
-cell = [Cell(copy(testpos),copy(testvel),40,30)]
+cell = Cell[Cell(copy(testpos),copy(testvel),40,30)]
 s = Simulation(cell,len_jones)
 
 dt = .1
