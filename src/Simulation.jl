@@ -1,8 +1,8 @@
 struct Simulation
-    cells::Vector{Cell} # Vector that holds all the cells in the simulations
+    cells::Vector{Cell{Float64}} # Vector that holds all the cells in the simulations
     potentials # potential functions
     steptotal::Vector{Int64}
-	Simulation(cells::Vector{Cell},potentials) = new(cells,potentials,[0])
+	Simulation(cells::Vector{Cell{Float64}},potentials) = new(cells,potentials,[0])
 end
 
 """Leapfrog integration step"""
