@@ -9,8 +9,8 @@ function reproduce!(s::Simulation, μ)
 			new_x2 = s.cells[i].p[1] - r*cosd(s.cells[i].o)
 			new_y2 = s.cells[i].p[2] - r*sind(s.cells[i].o)
 
-			t_division1 = rand(DiscreteUniform(8+nsteps,μ+nsteps),1)
-			t_division2 = rand(DiscreteUniform(8+nsteps,μ+nsteps),1)
+			t_division1 = rand(DiscreteUniform(100+nsteps,μ+nsteps),1)
+			t_division2 = rand(DiscreteUniform(100+nsteps,μ+nsteps),1)
 
 			newcell1 = Cell([new_x1,new_y1],s.cells[i].v,t_division1[1],s.cells[i].o,birth=nsteps,motherID=i,sisterID=length(s.cells)+2)
 			newcell2 = Cell([new_x2,new_y2],-s.cells[i].v,t_division2[1],s.cells[i].o,birth=nsteps,motherID=i,sisterID=length(s.cells)+1)

@@ -27,7 +27,7 @@ function makeCellArray(n, sparsity_level, μ)
 	pos .*= sparsity_level
 	vel ./= 1000.
 
-	t_division = rand(DiscreteUniform(8,μ),n)
+	t_division = rand(DiscreteUniform(100,μ),n)
 	#randomkick = rand(DiscreteUniform(4,μ),n)
 	orientation = rand(DiscreteUniform(0,180),n)
 
