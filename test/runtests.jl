@@ -1,5 +1,6 @@
 using Test, simgym
 import simgym: leapfrog!
+include("lineagetest.jl")
 
 @test 1==1
 
@@ -17,4 +18,4 @@ nsteps = 1
 
 leapfrog!(s,dt)
 
-@test testpos == s.cells[1].p
+#@test testpos == s.cells[1].p
