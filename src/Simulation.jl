@@ -25,7 +25,9 @@ function leapfrog!(s::Simulation, dt)
 				c.v2[2] = (-terminal_v)
 			end
 		end
-
+        if c.a == zeros(2)
+            c.v2 .= zeros(2)
+        end
         @. c.p += dt*c.v2
     end
     return
@@ -43,6 +45,9 @@ end
 function stepV!(s::Simulation, dt)
     for c in s.cells
 	    @. c.v = c.v2 + 0.5*dt*c.a
+        if c.a == zeros(2)
+            c.v .= zeros(2)
+        end
     end
 end
 

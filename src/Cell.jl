@@ -9,9 +9,13 @@ struct Cell{T<:Real}
 	o::Int64 # orientation, [0:180], of line segment of cell center +/- portion of length with respect to vertical axis of photo
     v2::Vector{T} # velocity half step
     a::Vector{T} # acceleration
+	birth::Int64
+	motherID::Int64
+	sisterID::Int64
+	daughterID::Vector{Int64}
 end
 
-Cell(p::Vector{T}, v::Vector{T}, d::Int64, o::Int64) where T<:Real = Cell(p,v,d,o,zeros(T,2),zeros(T,2))
+Cell(p::Vector{T}, v::Vector{T}, d::Int64, o::Int64; birth=0, motherID=0, sisterID=0, daughterID=zeros(Int64,2)) where T<:Real = Cell(p,v,d,o,zeros(T,2),zeros(T,2),birth,motherID,sisterID,daughterID)
 
 function makeCellArray(n, sparsity_level, μ)
 	"""
@@ -23,7 +27,7 @@ function makeCellArray(n, sparsity_level, μ)
 	pos .*= sparsity_level
 	vel ./= 1000.
 
-	t_division = rand(DiscreteUniform(4,μ),n)
+	t_division = rand(DiscreteUniform(8,μ),n)
 	#randomkick = rand(DiscreteUniform(4,μ),n)
 	orientation = rand(DiscreteUniform(0,180),n)
 
