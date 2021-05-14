@@ -1,4 +1,4 @@
 # simgym
 future simulation of biofilm dynamics &amp; binary masks
 
-![](examples/example.if)
+![](examples/example.gif)
