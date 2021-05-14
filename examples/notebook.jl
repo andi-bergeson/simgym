@@ -50,7 +50,7 @@ end
 begin
 	n_cells = 20
 	sparsity = 1.5
-	repro = 3500
+	repro = 4000
 	# dispersion energy constant
 	ϵ = 0.001
 	cellarray = makeCellArray(n_cells,sparsity,repro)
