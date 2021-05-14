@@ -1,4 +1,4 @@
-function len_jones(c1::Cell,c2::Cell,ϵ::Float64;maxdist=1.5)
+function len_jones(c1::Cell,c2::Cell,ϵ::Float64;maxdist=1.3)
     """
 	Models interactions on scales in which electrically neutral soft-matter
     is not hindered by the medium in its soft attraction and strong repulsion against itself
